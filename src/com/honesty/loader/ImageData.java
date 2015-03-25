@@ -1,4 +1,4 @@
-package com.honesty.android;
+package com.honesty.loader;
 
 import android.widget.ImageView;
 
