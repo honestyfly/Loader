@@ -9,16 +9,19 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import com.honesty.cache.DiskLruCache;
 import com.honesty.pool.QueueThread;
+import com.honesty.utils.Md5Helper;
 
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 import android.widget.ImageView;
 
 /**
  *@author honesty
  **/
 public class Loader {
+	private static final String TAG = "Loader";
 	LoaderConfig loaderConfig;
 	/**阻塞队列**/
 	BlockingQueue<ImageData> queueDatas = new LinkedBlockingQueue<ImageData>();
@@ -52,9 +55,27 @@ public class Loader {
 	/**
 	 * 设置默认配置参数并启动线程池
 	 */
-	public void setDefaultLoaderConfig(Context context){
-		loaderConfig = new LoaderConfig(context);
-		setLoaderConfig(context,loaderConfig);
+//	public void setDefaultLoaderConfig(Context context){
+//		loaderConfig = new LoaderConfig(context);
+//		setLoaderConfig(context,loaderConfig);
+//	}
+	public void downImage(String url){
+		//判断内存缓存是否存在
+		if(!loaderConfig.myLruCache.isBitmapCache((Md5Helper.toMD5(url)))){
+			try {
+				DiskLruCache.Snapshot snapshot = loaderConfig.mDiskLruCache.get(Md5Helper.toMD5(url));
+				if(snapshot == null){
+					System.out.println("下载图片");
+					//硬盘缓存不存在，下载图片
+					queueDatas.add(new ImageData(null, url));
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				//硬盘缓存不存在，下载图片
+				queueDatas.add(new ImageData(null, url));
+			}
+			
+		}
 	}
 	/**
 	 * 显示图片
@@ -62,8 +83,8 @@ public class Loader {
 	 * @param url
 	 */
 	public void displayImage(ImageView imageView , String url){
-		if(!getBitmapFromLruCache(url)){
-			if(!getBitmapFromDiskLruCache(url)){
+		if(!getBitmapFromLruCache(imageView,url)){
+			if(!getBitmapFromDiskLruCache(imageView,url)){
 				queueDatas.add(new ImageData(imageView, url));
 			}
 		}
@@ -73,10 +94,14 @@ public class Loader {
 	 * @param url
 	 * @return true获取图片，false没有图片
 	 */
-	public boolean getBitmapFromLruCache(String url){
-		Bitmap bitmap = loaderConfig.myLruCache.getLruBitmap(url);
+	public boolean getBitmapFromLruCache(ImageView imageView ,String url){
+		Bitmap bitmap = loaderConfig.myLruCache.getLruBitmap(Md5Helper.toMD5(url));
 		if(bitmap != null){
 			//从内存里读取图片
+			if(loaderConfig.isDebug){
+				Log.d(TAG, "从内存里获取图片");
+			}
+			imageView.setImageBitmap(bitmap);
 			return true;
 		}else{
 			return false;
@@ -87,13 +112,25 @@ public class Loader {
 	 * @param url
 	 * @return
 	 */
-	public boolean getBitmapFromDiskLruCache(String url){
+	public boolean getBitmapFromDiskLruCache(ImageView imageView ,String url){
 		try {
-			DiskLruCache.Snapshot snapshot = loaderConfig.mDiskLruCache.get(url);
+			DiskLruCache.Snapshot snapshot = loaderConfig.mDiskLruCache.get(Md5Helper.toMD5(url));
 			if(snapshot != null){
 				InputStream inputStream = snapshot.getInputStream(0);
 				Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+				String str = " bitmap.getWidth() = " + bitmap.getWidth() + " bitmap.getHeight() = " + bitmap.getHeight() + "bitmap.getByteCount() = " + bitmap.getByteCount()/1024 + "k";
+				if(loaderConfig.isDebug){
+					Log.d(TAG, "从SD卡里获取图片 " + str);					
+				}
+				imageView.setImageBitmap(bitmap);
+				// 将Bitmap对象添加到内存缓存当中
+				loaderConfig.myLruCache.putLruBitmap(
+						Md5Helper.toMD5(url), bitmap);
 				return true;
+			}else{
+				if(loaderConfig.isDebug){
+					Log.d(TAG, "SD卡里没有图片");					
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

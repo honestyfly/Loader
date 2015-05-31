@@ -7,11 +7,31 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 
 public class Http {
+	
+	public static void downImage(String urlPath){
+		try {
+			URL url = new URL(urlPath);
+			URLConnection conn = url.openConnection();
+			conn.connect();
+			int fileSize = conn.getContentLength();
+			System.out.println("fileSize = " + fileSize);
+			InputStream is = conn.getInputStream();
+			
+			byte[] bytes = new byte[1024];
+            int len = -1;  
+            while((len = is.read(bytes))!=-1){  
+                
+            }
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	/**
 	 * 通过url获取图片
 	 * 

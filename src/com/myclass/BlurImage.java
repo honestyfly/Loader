@@ -11,7 +11,6 @@ import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Bitmap.Config;
 import android.graphics.PorterDuff.Mode;
-import android.util.Log;
 
 public class BlurImage {
     
@@ -45,22 +44,6 @@ public class BlurImage {
      * @param bitmap
      * @return
      */
-    public static Bitmap getSquareBitmaps(Bitmap bitmap){
-        int imageWidth = bitmap.getWidth();
-        int imageHeight = bitmap.getHeight();
-        Log.e("imageWidth",imageWidth+"");  //  640
-        Log.e("imageHeight",imageHeight+"");  //  480
-        int y = 0;
-        Bitmap image = null;
-        if(imageHeight > imageWidth){
-        	y = (imageHeight - imageWidth)/2;
-        	image = Bitmap.createBitmap(bitmap, 0, y, imageWidth, imageWidth);
-        }else{
-        	y = (imageWidth - imageHeight)/2;
-        	image = Bitmap.createBitmap(bitmap, y, 0, imageHeight, imageHeight);
-        }
-        return image;
-    }
     public static Bitmap getSquareBitmap(Bitmap bitmap){
         int imageWidth = bitmap.getWidth();
         int imageHeight = bitmap.getHeight();
